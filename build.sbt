@@ -6,6 +6,7 @@ val versions = new {
   val zioLogging = "0.5.4"
 
   val http4s = "0.21.14"
+  val circe = "0.13.0"
   val logback = "1.2.3"
 
   val scalatest = "3.2.3"
@@ -22,9 +23,15 @@ val dependencies = {
     val `zio-logging` = "dev.zio" %% "zio-logging" % zioLogging
     val `zio-logging-slf4j` = "dev.zio" %% "zio-logging-slf4j" % zioLogging
 
+    val `http4s-core` = "org.http4s" %% "http4s-core" % http4s
+    val `http4s-server` = "org.http4s" %% "http4s-server" % http4s
     val `http4s-blaze-server` = "org.http4s" %% "http4s-blaze-server" % http4s
     val `http4s-circe` = "org.http4s" %% "http4s-circe" % http4s
     val `http4s-dsl` = "org.http4s" %% "http4s-dsl" % http4s
+
+    val `circe-core` = "io.circe" %% "circe-core" % circe
+    val `circe-generic` = "io.circe" %% "circe-generic" % circe
+
     val `logback-classic` = "ch.qos.logback" % "logback-classic" % logback
 
     val scalatest = "org.scalatest" %% "scalatest" % versions.scalatest % "test"
@@ -77,11 +84,22 @@ lazy val app = Project(
         `zio-logging`,
         `zio-logging-slf4j`,
 
+        `http4s-core`,
+        `http4s-server`,
         `http4s-blaze-server`,
         `http4s-circe`,
-        `http4s-dsl`
+        `http4s-dsl`,
+
+        `circe-core`,
+        `circe-generic`
       )
     },
+    undeclaredCompileDependenciesFilter -= moduleFilter("co.fs2", "fs2-core"),
+    undeclaredCompileDependenciesFilter -= moduleFilter("com.chuusai", "shapeless"),
+    undeclaredCompileDependenciesFilter -= moduleFilter("dev.zio", "izumi-reflect"),
+    undeclaredCompileDependenciesFilter -= moduleFilter("org.typelevel", "cats-core"),
+    undeclaredCompileDependenciesFilter -= moduleFilter("org.typelevel", "cats-effect"),
+    unusedCompileDependenciesFilter -= moduleFilter("ch.qos.logback", "logback-classic"),
     crossPaths := false,
 
     dockerExposedPorts ++= Seq(8080),
