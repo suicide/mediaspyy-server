@@ -12,7 +12,16 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
 
+import MediaStorage._
+import zio.clock.Clock
+
 object MainApp extends zio.App {
+
+  type AppEnv = MediaStorage with Clock
+
+  type AppTask[A] = RIO[AppEnv, A]
+
+  val appEnv = MediaStorage.inMemory
 
   override def run(args: List[String]): zio.URIO[zio.ZEnv, ExitCode] = {
     val ex = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4));
@@ -21,9 +30,9 @@ object MainApp extends zio.App {
     (
       for {
         _ <- log.info("Statup")
-        httpApp = Router[Task]("/" -> new ApiRoutes {}.routes).orNotFound
-        server <- ZIO.runtime[ZEnv].flatMap { implicit rts =>
-          BlazeServerBuilder[Task](ex)
+        httpApp = Router[AppTask]("/" -> new ApiRoutes[AppEnv] {}.routes).orNotFound
+        server <- ZIO.runtime[AppEnv].flatMap { implicit rts =>
+          BlazeServerBuilder[AppTask](ex)
             .bindHttp(8080, "0.0.0.0")
             .withHttpApp(httpApp)
             .serve
@@ -32,7 +41,7 @@ object MainApp extends zio.App {
         }
       } yield server
     )
-      .provideCustomLayer(loggingEnv)
+      .provideCustomLayer(loggingEnv ++ appEnv)
       .exitCode
 
   }
