@@ -29,9 +29,12 @@ trait ApiRoutes[R <: MediaStorage] {
   lazy val dsl: Http4sDsl[ApiTask] = Http4sDsl[ApiTask]
   import dsl._
 
+  object resultSizeParam
+      extends OptionalQueryParamDecoderMatcher[Int]("resultSize")
+
   def routes = HttpRoutes.of[ApiTask] {
-    case GET -> Root / "media" =>
-      list(10).foldM(_ => BadRequest(), Ok(_))
+    case GET -> Root / "media" :? resultSizeParam(size) =>
+      list(size.getOrElse(10)).foldM(_ => BadRequest(), Ok(_))
     case req @ POST -> Root / "media" =>
       req.decode[MediaData](m =>
         createMedia(m).foldM(_ => BadRequest(), _ => Ok())

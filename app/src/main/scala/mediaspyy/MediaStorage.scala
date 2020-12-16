@@ -19,7 +19,7 @@ object MediaStorage {
           override def createMedia(media: MediaData): IO[DbError, Unit] =
             ref.update(l => l :+ media)
           override def list(resultSize: Int): IO[DbError, List[MediaData]] =
-            ref.get
+            ref.get.map(l => l.reverse.take(resultSize))
         }
       )
   )
