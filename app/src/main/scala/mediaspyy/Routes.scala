@@ -24,6 +24,7 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.AuthedRoutes
 import cats.data.OptionT
 import org.http4s.BasicCredentials
+import org.http4s.server.middleware.authentication.BasicAuth
 
 trait ApiRoutes[R <: MediaStorage with AuthenticationService] {
 
@@ -43,24 +44,8 @@ trait ApiRoutes[R <: MediaStorage with AuthenticationService] {
   object resultSizeParam
       extends OptionalQueryParamDecoderMatcher[Int]("resultSize")
 
-  val authUser: Kleisli[ApiTask, Request[ApiTask], Either[Err, User]] =
-    Kleisli(req => {
-      req.headers.get(Authorization) match {
-        case None => RIO(Left("nope"))
-        case Some(h) =>
-          h.credentials match {
-            case BasicCredentials(user, password) =>
-              authentcate(user, password).map(_.toRight("nope2"))
-            case _ => RIO(Left("nope3"))
-          }
-      }
-    })
-
-  val authFailure: AuthedRoutes[Err, ApiTask] =
-    AuthedRoutes(req => OptionT.liftF(Forbidden("just no")))
-
   val authedMiddleware: AuthMiddleware[ApiTask, User] =
-    AuthMiddleware(authUser, authFailure)
+    BasicAuth("mediaspyy", b => authentcate(b.username, b.password))
 
   def routes: HttpRoutes[ApiTask] = authedMiddleware(authedRoutes)
 
