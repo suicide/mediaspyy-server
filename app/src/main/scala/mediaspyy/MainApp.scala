@@ -13,15 +13,16 @@ import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
 
 import MediaStorage._
+import AuthenticationService._
 import zio.clock.Clock
 
 object MainApp extends zio.App {
 
-  type AppEnv = MediaStorage with Clock
+  type AppEnv = MediaStorage with AuthenticationService with Clock
 
   type AppTask[A] = RIO[AppEnv, A]
 
-  val appEnv = MediaStorage.inMemory
+  val appEnv = MediaStorage.inMemory ++ AuthenticationService.testStub
 
   override def run(args: List[String]): zio.URIO[zio.ZEnv, ExitCode] = {
     val ex = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4));
