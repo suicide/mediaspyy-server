@@ -13,15 +13,19 @@ object AuthenticationService {
   val testStub: Layer[Nothing, AuthenticationService] =
     ZLayer.succeed {
       new Service {
-        val test = "test"
+        val users = Map(
+          ("test", "test"),
+          ("foo", "bar")
+        )
         override def authenticate(
             name: String,
             password: String
         ): Task[Option[User]] =
-          if (name == test && password == test) {
-            return Task(Some(new User(test, test)))
-          } else {
-            return Task(None)
+          Task {
+            users
+              .get(name)
+              .filter(p => p == password)
+              .map(_ => new User(name, password))
           }
       }
     }
