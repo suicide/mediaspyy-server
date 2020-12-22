@@ -51,10 +51,10 @@ trait ApiRoutes[R <: MediaStorage with AuthenticationService] {
 
   def authedRoutes = AuthedRoutes.of[User, ApiTask] {
     case GET -> Root / "media" :? resultSizeParam(size) as user =>
-      list(size.getOrElse(10)).foldM(_ => BadRequest(), Ok(_))
+      list(user, size.getOrElse(10)).foldM(_ => BadRequest(), Ok(_))
     case req @ POST -> Root / "media" as user =>
       req.req.decode[MediaData](m =>
-        createMedia(m).foldM(_ => BadRequest(), _ => Ok())
+        createMedia(user, m).foldM(_ => BadRequest(), _ => Ok())
       )
   }
 
