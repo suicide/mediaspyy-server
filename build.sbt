@@ -2,12 +2,15 @@ import com.typesafe.sbt.packager.docker.DockerVersion
 
 val versions = new {
   val zio = "1.0.3"
-  val zioInterop = "2.2.0.1"
+  val zioInteropCats = "2.2.0.1"
+  val zioInteropReactivestreams = "1.3.0.7-2"
   val zioLogging = "0.5.4"
 
   val http4s = "0.21.14"
   val circe = "0.13.0"
   val logback = "1.2.3"
+
+  val mongo = "4.1.1"
 
   val scalatest = "3.2.3"
   val scalatic = "3.2.2"
@@ -19,7 +22,8 @@ val dependencies = {
   import versions._
   new {
     val zio = "dev.zio" %% "zio" % versions.zio
-    val `zio-interop` = "dev.zio" %% "zio-interop-cats" % zioInterop
+    val `zio-interop-cats` = "dev.zio" %% "zio-interop-cats" % zioInteropCats
+    val `zio-interop-reactivestreams` = "dev.zio" %% "zio-interop-reactivestreams" % zioInteropReactivestreams
     val `zio-logging` = "dev.zio" %% "zio-logging" % zioLogging
     val `zio-logging-slf4j` = "dev.zio" %% "zio-logging-slf4j" % zioLogging
 
@@ -31,6 +35,8 @@ val dependencies = {
 
     val `circe-core` = "io.circe" %% "circe-core" % circe
     val `circe-generic` = "io.circe" %% "circe-generic" % circe
+
+    val `mongo-scala-driver` = "org.mongodb.scala" %% "mongo-scala-driver" % mongo
 
     val `logback-classic` = "ch.qos.logback" % "logback-classic" % logback
 
@@ -80,7 +86,8 @@ lazy val app = Project(
       import dependencies._
       Seq(
         zio,
-        `zio-interop`,
+        `zio-interop-cats`,
+        `zio-interop-reactivestreams`,
         `zio-logging`,
         `zio-logging-slf4j`,
 
@@ -91,7 +98,9 @@ lazy val app = Project(
         `http4s-dsl`,
 
         `circe-core`,
-        `circe-generic`
+        `circe-generic`,
+
+        `mongo-scala-driver`
       )
     },
     undeclaredCompileDependenciesFilter -= moduleFilter("co.fs2", "fs2-core"),

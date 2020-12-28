@@ -8,6 +8,7 @@ import org.http4s.Request
 import zio.interop.catz._
 import zio._
 import cats.data.Kleisli
+import zio.logging._
 
 import io.circe.generic.auto._
 import io.circe.Decoder
@@ -26,7 +27,7 @@ import cats.data.OptionT
 import org.http4s.BasicCredentials
 import org.http4s.server.middleware.authentication.BasicAuth
 
-trait ApiRoutes[R <: MediaStorage with AuthenticationService] {
+trait ApiRoutes[R <: MediaStorage with AuthenticationService with Logging] {
 
   type ApiTask[A] = RIO[R, A]
   type Err = String
@@ -51,10 +52,22 @@ trait ApiRoutes[R <: MediaStorage with AuthenticationService] {
 
   def authedRoutes = AuthedRoutes.of[User, ApiTask] {
     case GET -> Root / "media" :? resultSizeParam(size) as user =>
-      list(user, size.getOrElse(10)).foldM(_ => BadRequest(), Ok(_))
+      list(user, size.getOrElse(10))
+        .foldM(
+          e =>
+            log.throwable("Request failed with error", e) *>
+              InternalServerError("sorry"),
+          Ok(_)
+        )
     case req @ POST -> Root / "media" as user =>
       req.req.decode[MediaData](m =>
-        createMedia(user, m).foldM(_ => BadRequest(), _ => Ok())
+        createMedia(user, m)
+          .foldM(
+            e =>
+              log.throwable("Request failed with error", e) *>
+                InternalServerError("sorry"),
+            _ => Ok()
+          )
       )
   }
 

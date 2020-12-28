@@ -49,6 +49,6 @@ object MediaStorage {
   ): ZIO[MediaStorage, DbError, List[MediaData]] =
     ZIO.accessM(_.get.list(user, resultSize))
 
-  case class DbError(msg: String, cause: Throwable)
+  case class DbError(msg: String, cause: Throwable = null)
       extends RuntimeException(msg, cause)
 }

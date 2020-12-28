@@ -18,20 +18,27 @@ import zio.clock.Clock
 
 object MainApp extends zio.App {
 
-  type AppEnv = MediaStorage with AuthenticationService with Clock
+  type AppEnv = MediaStorage with AuthenticationService with Clock with Logging
 
   type AppTask[A] = RIO[AppEnv, A]
 
-  val appEnv = MediaStorage.inMemory ++ AuthenticationService.testStub
+  val loggingEnv = Slf4jLogger.make((ctx, msg) => msg)
+  val appEnv =
+    loggingEnv >+>
+      AppConfig.hardDefault >+>
+      MongoDb.database >+>
+      MongoMediaStorage.storage ++
+      AuthenticationService.testStub
 
   override def run(args: List[String]): zio.URIO[zio.ZEnv, ExitCode] = {
     val ex = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4));
-    val loggingEnv = Slf4jLogger.make((ctx, msg) => msg)
 
     (
       for {
         _ <- log.info("Statup")
-        httpApp = Router[AppTask]("/" -> new ApiRoutes[AppEnv] {}.routes).orNotFound
+        httpApp = Router[AppTask](
+          "/" -> new ApiRoutes[AppEnv] {}.routes
+        ).orNotFound
         server <- ZIO.runtime[AppEnv].flatMap { implicit rts =>
           BlazeServerBuilder[AppTask](ex)
             .bindHttp(8080, "0.0.0.0")
@@ -42,7 +49,7 @@ object MainApp extends zio.App {
         }
       } yield server
     )
-      .provideCustomLayer(loggingEnv ++ appEnv)
+      .provideCustomLayer(appEnv)
       .exitCode
 
   }
