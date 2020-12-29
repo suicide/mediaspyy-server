@@ -9,6 +9,7 @@ val versions = new {
   val http4s = "0.21.14"
   val circe = "0.13.0"
   val logback = "1.2.3"
+  val reactivestreams = "1.0.3"
 
   val mongo = "4.1.1"
 
@@ -22,6 +23,7 @@ val dependencies = {
   import versions._
   new {
     val zio = "dev.zio" %% "zio" % versions.zio
+    val `zio-streams` = "dev.zio" %% "zio-streams" % versions.zio
     val `zio-interop-cats` = "dev.zio" %% "zio-interop-cats" % zioInteropCats
     val `zio-interop-reactivestreams` = "dev.zio" %% "zio-interop-reactivestreams" % zioInteropReactivestreams
     val `zio-logging` = "dev.zio" %% "zio-logging" % zioLogging
@@ -36,9 +38,13 @@ val dependencies = {
     val `circe-core` = "io.circe" %% "circe-core" % circe
     val `circe-generic` = "io.circe" %% "circe-generic" % circe
 
+    val `bson` = "org.mongodb" % "bson" % mongo
+    val `mongodb-driver-core` = "org.mongodb" % "mongodb-driver-core" % mongo
+    val `mongo-scala-bson` = "org.mongodb.scala" %% "mongo-scala-bson" % mongo
     val `mongo-scala-driver` = "org.mongodb.scala" %% "mongo-scala-driver" % mongo
 
     val `logback-classic` = "ch.qos.logback" % "logback-classic" % logback
+    val `reactive-streams` = "org.reactivestreams" % "reactive-streams" % reactivestreams
 
     val scalatest = "org.scalatest" %% "scalatest" % versions.scalatest % "test"
     val scalatic = "org.scalactic" %% "scalactic" % versions.scalatic
@@ -86,6 +92,7 @@ lazy val app = Project(
       import dependencies._
       Seq(
         zio,
+        `zio-streams`,
         `zio-interop-cats`,
         `zio-interop-reactivestreams`,
         `zio-logging`,
@@ -100,7 +107,12 @@ lazy val app = Project(
         `circe-core`,
         `circe-generic`,
 
-        `mongo-scala-driver`
+        bson,
+        `mongodb-driver-core`,
+        `mongo-scala-bson`,
+        `mongo-scala-driver`,
+
+        `reactive-streams`,
       )
     },
     undeclaredCompileDependenciesFilter -= moduleFilter("co.fs2", "fs2-core"),
