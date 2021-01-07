@@ -9,3 +9,8 @@ Server backend for the MediaSpyy Chrome extension. It persists media information
 ```bash
 ./sbt clean compile
 ```
+
+## TODO
+
+- Config from environment
+- Reproducible build (buildah?)

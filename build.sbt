@@ -63,7 +63,7 @@ val commonSettings = Seq(
     )
   },
   dockerVersion := Some(DockerVersion(19, 3, 13, Some("ce"))),
-  dockerBaseImage := "openjdk:11",
+  dockerBaseImage := "registry.hub.docker.com/library/openjdk:11",
 )
 
 lazy val core = Project(
