@@ -61,6 +61,7 @@ jobs:
           dockerfiles: ./Dockerfile
           image: ${{ env.IMAGE_NAME }}
           tag: latest
+          oci: true
           flags: --timestamp 0
       - name: Build commit tag with buildah
         id: build_image_commit
@@ -69,6 +70,7 @@ jobs:
           dockerfiles: ./Dockerfile
           image: suiiii/mediaspyy
           tag: ${{ github.sha }}
+          oci: true
           flags: --timestamp 0
       - name: Push latest to dockerhub
         id: push_image_latest
