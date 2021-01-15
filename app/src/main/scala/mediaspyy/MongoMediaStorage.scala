@@ -28,7 +28,8 @@ object MongoMediaStorage {
     fromProviders(
       classOf[MediaEntry],
       classOf[MediaData],
-      classOf[MediaImage]
+      classOf[MediaImage],
+      classOf[MediaLocation]
     ),
     DEFAULT_CODEC_REGISTRY
   )
@@ -81,6 +82,7 @@ object MongoMediaStorage {
         _ <- logger.debug(s"Reading media data for user $user from $c")
         chunk <- c
           .find(equal("username", user.name))
+          .sort(descending("createdAt"))
           .toStream()
           .take(resultSize)
           .run(Sink.collectAll)

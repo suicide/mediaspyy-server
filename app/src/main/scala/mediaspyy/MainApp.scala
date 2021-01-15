@@ -13,22 +13,37 @@ import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
 
 import MediaStorage._
+import MediaService._
 import AuthenticationService._
 import zio.clock.Clock
 
 object MainApp extends zio.App {
 
-  type AppEnv = MediaStorage with AuthenticationService with Clock with Logging
+  type AppEnv = MediaService
+    with MediaStorage
+    with AuthenticationService
+    with Clock
+    with Logging
 
   type AppTask[A] = RIO[AppEnv, A]
 
-  val loggingEnv = Slf4jLogger.make((ctx, msg) => msg)
-  val appEnv =
-    loggingEnv >+>
-      AppConfig.hardDefault >+>
-      MongoDb.database >+>
-      MongoMediaStorage.storage ++
+  val appEnv = {
+    import zio.ZLayer._
+
+    val loggingEnv = Slf4jLogger.make((ctx, msg) => msg)
+
+    val baseEnv = requires[Clock] ++ loggingEnv ++ AppConfig.hardDefault
+    val storageEnv = requires[Logging] ++ MongoDb.database >>>
+      MongoMediaStorage.storage
+
+    val serviceEnv = requires[Clock] ++ MediaService.storing >>>
+      MediaService.withTimestamp
+
+    baseEnv >+>
+      storageEnv >+>
+      serviceEnv >+>
       AuthenticationService.testStub
+  }
 
   override def run(args: List[String]): zio.URIO[zio.ZEnv, ExitCode] = {
     val ex = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4));

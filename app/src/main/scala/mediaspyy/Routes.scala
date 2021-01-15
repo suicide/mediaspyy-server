@@ -17,7 +17,7 @@ import org.http4s.circe._
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 
-import MediaStorage._
+import MediaService._
 import AuthenticationService._
 
 import org.http4s.headers.Authorization
@@ -27,7 +27,7 @@ import cats.data.OptionT
 import org.http4s.BasicCredentials
 import org.http4s.server.middleware.authentication.BasicAuth
 
-trait ApiRoutes[R <: MediaStorage with AuthenticationService with Logging] {
+trait ApiRoutes[R <: MediaService with AuthenticationService with Logging] {
 
   type ApiTask[A] = RIO[R, A]
   type Err = String
@@ -60,7 +60,7 @@ trait ApiRoutes[R <: MediaStorage with AuthenticationService with Logging] {
           Ok(_)
         )
     case req @ POST -> Root / "media" as user =>
-      req.req.decode[MediaData](m =>
+      req.req.decode[BasicMediaData](m =>
         createMedia(user, m)
           .foldM(
             e =>

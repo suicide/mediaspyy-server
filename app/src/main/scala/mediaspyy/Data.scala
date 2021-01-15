@@ -1,11 +1,28 @@
 package mediaspyy
 
+import java.time.Instant
+
+case class BasicMediaData(
+  title: String,
+  artist: String,
+  album: Option[String],
+  locations: List[MediaLocation],
+  images: List[MediaImage],
+  )
+
 case class MediaData(
   title: String,
   artist: String,
   album: Option[String],
-  url: String,
-  images: List[MediaImage]
+  locations: List[MediaLocation],
+  images: List[MediaImage],
+
+  createdAt: Instant
+  )
+
+case class MediaLocation(
+  `type`: String,
+  url: String
   )
 
 case class MediaImage (
