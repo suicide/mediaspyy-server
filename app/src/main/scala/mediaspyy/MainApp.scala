@@ -12,9 +12,12 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
 
+import AppConfig._
+import Http4sClient._
 import MediaStorage._
 import MediaService._
 import AuthenticationService._
+import BotPushMediaService._
 import zio.clock.Clock
 
 object MainApp extends zio.App {
@@ -36,13 +39,14 @@ object MainApp extends zio.App {
     val storageEnv = requires[Logging] ++ MongoDb.database >>>
       MongoMediaStorage.storage
 
-    val serviceEnv = requires[Clock] ++ MediaService.storing >>>
-      MediaService.withTimestamp
+      val serviceEnv = requires[Clock] ++ requires[AppConfig] ++ MediaService.storing >+>
+    MediaService.withTimestamp >+>
+    Http4sClient.client >+> BotPushMediaService.botPush
 
     baseEnv >+>
       storageEnv >+>
       serviceEnv >+>
-      AuthenticationService.testStub
+      AuthenticationService.fromConfig
   }
 
   override def run(args: List[String]): zio.URIO[zio.ZEnv, ExitCode] = {

@@ -2,6 +2,8 @@ package mediaspyy
 
 import zio._
 
+import AppConfig._
+
 object AuthenticationService {
 
   type AuthenticationService = Has[AuthenticationService.Service]
@@ -10,22 +12,18 @@ object AuthenticationService {
     def authenticate(name: String, password: String): Task[Option[User]]
   }
 
-  val testStub: Layer[Nothing, AuthenticationService] =
-    ZLayer.succeed {
+  val fromConfig: URLayer[AppConfig, AuthenticationService] =
+    ZLayer.fromService[Config, AuthenticationService.Service] { c =>
       new Service {
-        val users = Map(
-          ("test", "test"),
-          ("foo", "bar")
-        )
         override def authenticate(
             name: String,
             password: String
         ): Task[Option[User]] =
           Task {
-            users
+            c.users
               .get(name)
               .filter(p => p == password)
-              .map(_ => new User(name, password))
+              .map(_ => User(name, password))
           }
       }
     }

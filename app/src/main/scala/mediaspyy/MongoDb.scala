@@ -10,12 +10,14 @@ object MongoDb {
 
   type MongoDb = Has[MongoDatabase]
 
-  val database: RLayer[AppConfig, MongoDb] = ZLayer.fromServiceManaged(config =>
+  val database: RLayer[AppConfig, MongoDb] = ZLayer.fromServiceManaged(config => {
+      val c = config.db
     Managed
-      .make(RIO(MongoClient(config.connectionString)))(client =>
+      .make(RIO(MongoClient(c.connectionString)))(client =>
         UIO(client.close())
       )
-      .map(client => client.getDatabase(config.dbName))
+      .map(client => client.getDatabase(c.dbName))
+  }
   )
 
 }
