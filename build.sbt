@@ -131,6 +131,12 @@ lazy val app = Project(
     undeclaredCompileDependenciesFilter -= moduleFilter("dev.zio", "izumi-reflect"),
     undeclaredCompileDependenciesFilter -= moduleFilter("org.typelevel", "cats-core"),
     undeclaredCompileDependenciesFilter -= moduleFilter("org.typelevel", "cats-effect"),
+    // zio config
+    undeclaredCompileDependenciesFilter -= moduleFilter("com.propensive", "magnolia"),
+    undeclaredCompileDependenciesFilter -= moduleFilter("com.propensive", "mercator"),
+
+
+    undeclaredCompileDependenciesFilter -= moduleFilter("io.chrisdavenport", "vault"),
     unusedCompileDependenciesFilter -= moduleFilter("ch.qos.logback", "logback-classic"),
     crossPaths := false,
 
