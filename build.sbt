@@ -6,6 +6,7 @@ val versions = new {
   val zioInteropReactivestreams = "1.3.0.7-2"
   val zioLogging = "0.5.4"
   val zioConfig = "1.0.0-RC31-1"
+  val zioJson = "0.0.1"
 
   val http4s = "0.21.14"
   val circe = "0.13.0"
@@ -13,6 +14,8 @@ val versions = new {
   val reactivestreams = "1.0.3"
 
   val mongo = "4.1.1"
+
+  val commonsNet = "3.7.2"
 
   val scalatest = "3.2.3"
   val scalatic = "3.2.2"
@@ -34,6 +37,8 @@ val dependencies = {
     val `zio-config` = "dev.zio" %% "zio-config" % zioConfig
     val `zio-config-magnolia` = "dev.zio" %% "zio-config-magnolia" % zioConfig
 
+    val `zio-json` = "dev.zio" %% "zio-json" % zioJson
+
     val `http4s-core` = "org.http4s" %% "http4s-core" % http4s
     val `http4s-server` = "org.http4s" %% "http4s-server" % http4s
     val `http4s-blaze-server` = "org.http4s" %% "http4s-blaze-server" % http4s
@@ -49,6 +54,8 @@ val dependencies = {
     val `mongodb-driver-core` = "org.mongodb" % "mongodb-driver-core" % mongo
     val `mongo-scala-bson` = "org.mongodb.scala" %% "mongo-scala-bson" % mongo
     val `mongo-scala-driver` = "org.mongodb.scala" %% "mongo-scala-driver" % mongo
+
+    val `commons-net` = "commons-net" % "commons-net" % commonsNet
 
     val `logback-classic` = "ch.qos.logback" % "logback-classic" % logback
     val `reactive-streams` = "org.reactivestreams" % "reactive-streams" % reactivestreams
@@ -106,6 +113,7 @@ lazy val app = Project(
         `zio-logging-slf4j`,
         `zio-config`,
         `zio-config-magnolia`,
+        `zio-json`,
 
         `http4s-core`,
         `http4s-server`,
@@ -124,6 +132,8 @@ lazy val app = Project(
         `mongo-scala-driver`,
 
         `reactive-streams`,
+
+        `commons-net`,
       )
     },
     undeclaredCompileDependenciesFilter -= moduleFilter("co.fs2", "fs2-core"),

@@ -18,6 +18,7 @@ import MediaStorage._
 import MediaService._
 import AuthenticationService._
 import BotPushMediaService._
+import FtpUploadMediaService._
 import zio.clock.Clock
 
 object MainApp extends zio.App {
@@ -35,13 +36,15 @@ object MainApp extends zio.App {
 
     val loggingEnv = Slf4jLogger.make((ctx, msg) => msg)
 
-    val baseEnv = requires[Clock] ++ loggingEnv ++ AppConfig.hardDefault
+    val baseEnv = requires[Clock] ++ loggingEnv ++ AppConfig.fromEnv
     val storageEnv = requires[Logging] ++ MongoDb.database >>>
       MongoMediaStorage.storage
 
-      val serviceEnv = requires[Clock] ++ requires[AppConfig] ++ MediaService.storing >+>
-    MediaService.withTimestamp >+>
-    Http4sClient.client >+> BotPushMediaService.botPush
+    val serviceEnv = requires[Logging] ++ requires[Clock] ++
+      requires[AppConfig] ++ MediaService.storing >+>
+      MediaService.withTimestamp >+>
+      FtpUploadMediaService.service
+//    Http4sClient.client >+> BotPushMediaService.botPush
 
     baseEnv >+>
       storageEnv >+>

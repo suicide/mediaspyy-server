@@ -13,18 +13,31 @@ object AppConfig {
   case class Config(
       server: ServerConfig,
       db: DbConfig,
-      users: Map[String, String],
-      bot: BotConfig
+      users: Map[String, String] = Map("test" -> "test"),
+      bot: BotConfig,
+      ftp: FtpConfig
   )
 
   case class ServerConfig(port: Int = 8080)
-  case class DbConfig(connectionString: String, dbName: String)
+  case class DbConfig(
+      connectionString: String =
+        "mongodb://root:root@localhost:27017/?authSource=admin&connectTimeoutMS=1000&socketTimeoutMS=1000&serverSelectionTimeoutMS=2000",
+      dbName: String = "mediaspyy"
+  )
   case class BotConfig(
       enabled: Boolean = false,
-      addMediaUri: String =  "http://localhost:48080/command",
+      addMediaUri: String = "http://localhost:48080/command",
       user: String = "test",
       password: String = "test",
       keyword: String = "song"
+  )
+  case class FtpConfig(
+      enabled: Boolean = false,
+      server: String = "localhost",
+      port: Int = 21,
+      user: String = "test",
+      password: String = "test",
+      uploadPath: String = "current_media.json"
   )
 
   val hardDefault =
@@ -35,7 +48,7 @@ object AppConfig {
         "db.dbName" -> "mediaspyy",
         "users.test" -> "test",
         "users.foo" -> "bar",
-        "bot.enabled" -> "true",
+        "bot.enabled" -> "true"
       ),
       automaticConfig,
       keyDelimiter = Some('.')
