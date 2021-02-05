@@ -4,40 +4,59 @@ import org.http4s.implicits._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.HttpRoutes
 import org.http4s.Request
+import org.http4s.Header
 
 import zio.interop.catz._
 import zio._
 import cats.data.Kleisli
 import zio.logging._
+import zio.json._
 
-import io.circe.generic.auto._
-import io.circe.Decoder
-import io.circe.Encoder
-import org.http4s.circe._
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 
 import MediaService._
 import AuthenticationService._
+import DataJson._
 
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.AuthedRoutes
 import cats.data.OptionT
+import cats.data.EitherT
 import org.http4s.BasicCredentials
 import org.http4s.server.middleware.authentication.BasicAuth
+import java.nio.charset.StandardCharsets
+import cats.effect.Sync
+import org.http4s.MalformedMessageBodyFailure
 
 trait ApiRoutes[R <: MediaService with AuthenticationService with Logging] {
 
   type ApiTask[A] = RIO[R, A]
   type Err = String
 
-  implicit def circeJsonDecoder[A](implicit
-      decoder: Decoder[A]
-  ): EntityDecoder[ApiTask, A] = jsonOf[ApiTask, A]
-  implicit def circeJsonEncoder[A](implicit
-      decoder: Encoder[A]
-  ): EntityEncoder[ApiTask, A] = jsonEncoderOf[ApiTask, A]
+  implicit def jsonDecoder: EntityDecoder[ApiTask, BasicMediaData] = {
+
+    val decoder: EntityDecoder[ApiTask, Array[Byte]] =
+      EntityDecoder.byteArrayDecoder
+
+    decoder.flatMapR(arr => {
+      val res = basicMediaDataDecoder
+        .decodeJson(new String(arr, StandardCharsets.UTF_8))
+
+      res match {
+        case Right(media) => EitherT.pure(media)
+        case Left(msg)    => EitherT.leftT(MalformedMessageBodyFailure(msg))
+      }
+    })
+  }
+
+  implicit def jsonEncoder: EntityEncoder[ApiTask, List[MediaData]] =
+    EntityEncoder.simple(Header("Content-Type", "application/json"))(m => {
+      fs2.Chunk.array {
+        m.toJsonPretty.getBytes(StandardCharsets.UTF_8)
+      }
+    })
 
   lazy val dsl: Http4sDsl[ApiTask] = Http4sDsl[ApiTask]
   import dsl._

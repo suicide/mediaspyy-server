@@ -13,16 +13,11 @@ import java.nio.charset.StandardCharsets
 
 object FtpUploadMediaService {
 
+  import DataJson._
+
   // handle concurrent upload requests
   // upload latest create media
   // TODO upload latest history
-
-  // refactor to Data file and maybe replace circe?
-  implicit val encoder: JsonEncoder[MediaData] = {
-    implicit val location = DeriveJsonEncoder.gen[MediaLocation]
-    implicit val image = DeriveJsonEncoder.gen[MediaImage]
-    DeriveJsonEncoder.gen[MediaData]
-  }
 
   val service: URLayer[AppConfig with Logging with MediaService, MediaService] =
     ZLayer.fromServicesM[

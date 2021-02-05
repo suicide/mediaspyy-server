@@ -1,15 +1,14 @@
 import com.typesafe.sbt.packager.docker.DockerVersion
 
 val versions = new {
-  val zio = "1.0.3"
+  val zio = "1.0.4-2"
   val zioInteropCats = "2.2.0.1"
   val zioInteropReactivestreams = "1.3.0.7-2"
   val zioLogging = "0.5.4"
   val zioConfig = "1.0.0-RC31-1"
-  val zioJson = "0.0.1"
+  val zioJson = "0.1"
 
   val http4s = "0.21.14"
-  val circe = "0.13.0"
   val logback = "1.2.3"
   val reactivestreams = "1.0.3"
 
@@ -44,11 +43,7 @@ val dependencies = {
     val `http4s-blaze-server` = "org.http4s" %% "http4s-blaze-server" % http4s
     val `http4s-client` = "org.http4s" %% "http4s-client" % http4s
     val `http4s-blaze-client` = "org.http4s" %% "http4s-blaze-client" % http4s
-    val `http4s-circe` = "org.http4s" %% "http4s-circe" % http4s
     val `http4s-dsl` = "org.http4s" %% "http4s-dsl" % http4s
-
-    val `circe-core` = "io.circe" %% "circe-core" % circe
-    val `circe-generic` = "io.circe" %% "circe-generic" % circe
 
     val `bson` = "org.mongodb" % "bson" % mongo
     val `mongodb-driver-core` = "org.mongodb" % "mongodb-driver-core" % mongo
@@ -120,11 +115,7 @@ lazy val app = Project(
         `http4s-blaze-server`,
         `http4s-client`,
         `http4s-blaze-client`,
-        `http4s-circe`,
         `http4s-dsl`,
-
-        `circe-core`,
-        `circe-generic`,
 
         bson,
         `mongodb-driver-core`,
