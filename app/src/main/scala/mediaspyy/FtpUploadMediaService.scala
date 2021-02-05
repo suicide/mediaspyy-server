@@ -40,7 +40,6 @@ object FtpUploadMediaService {
             ftpClient
               .use { client =>
                 for {
-                  // TODO mediaData to JSON
                   json <- toJsonString(media)
                   _ <- logger.debug(s"Created payload for media $media")
                   data <- Task(
@@ -71,7 +70,6 @@ object FtpUploadMediaService {
         ): IO[ProcessingError, List[MediaData]] =
           mediaService.list(user, resultSize)
 
-        // TODO actually implement this
         def toJsonString(media: MediaData): Task[String] =
           Task(media.toJson)
 
