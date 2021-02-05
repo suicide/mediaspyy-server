@@ -32,12 +32,14 @@ object AppConfig {
       keyword: String = "song"
   )
   case class FtpConfig(
+    // TODO implement switch
       enabled: Boolean = false,
       server: String = "localhost",
       port: Int = 21,
       user: String = "test",
       password: String = "test",
-      uploadPath: String = "current_media.json"
+      uploadPathCurrent: String = "current_media.json",
+      uploadPathHistory: String = "history.json"
   )
 
   val hardDefault =

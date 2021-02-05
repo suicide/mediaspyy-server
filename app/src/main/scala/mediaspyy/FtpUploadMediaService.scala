@@ -18,6 +18,7 @@ object FtpUploadMediaService {
   // handle concurrent upload requests
   // upload latest create media
   // TODO upload latest history
+  // handle multiple users
 
   val service: URLayer[AppConfig with Logging with MediaService, MediaService] =
     ZLayer.fromServicesM[
@@ -36,31 +37,34 @@ object FtpUploadMediaService {
             user: User,
             media: MediaData
         ): IO[ProcessingError, MediaData] = {
-          def upload(media: MediaData) = sem.withPermit {
+          def upload[A](content: A, path: String)(implicit je: JsonEncoder[A]) = sem.withPermit {
             ftpClient
               .use { client =>
                 for {
-                  json <- toJsonString(media)
-                  _ <- logger.debug(s"Created payload for media $media")
+                  json <- Task(content.toJson)
+                  _ <- logger.debug(s"Created payload for content $content")
                   data <- Task(
                     new ByteArrayInputStream(
                       json.getBytes(StandardCharsets.UTF_8)
                     )
                   )
-                  _ <- Task { client.storeFile(config.ftp.uploadPath, data) }
+                  _ <- Task { client.storeFile(path, data) }
                     .filterOrDieMessage(identity)(
-                      s"Uploading media $media unsuccessful"
+                      s"Uploading content $content unsuccessful"
                     )
-                  _ <- logger.debug(s"Upload of media $media successful")
+                  _ <- logger.debug(s"Upload of content $content successful")
                 } yield (())
 
               }
               .mapError(ex => ProcessingError("Failed to upload to server", ex))
           }
 
+          val c = config.ftp
           for {
             res <- mediaService.createMedia(user, media)
-            _ <- upload(res)
+            _ <- upload(res, c.uploadPathCurrent)
+            history <- list(user, 100)
+            _ <- upload(history, c.uploadPathHistory)
           } yield res
         }
 
@@ -69,9 +73,6 @@ object FtpUploadMediaService {
             resultSize: Int
         ): IO[ProcessingError, List[MediaData]] =
           mediaService.list(user, resultSize)
-
-        def toJsonString(media: MediaData): Task[String] =
-          Task(media.toJson)
 
         val ftpClient: TaskManaged[FTPClient] = {
           val c = config.ftp
