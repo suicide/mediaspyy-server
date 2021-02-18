@@ -12,5 +12,8 @@ Server backend for the MediaSpyy Chrome extension. It persists media information
 
 ## TODO
 
-- Config from environment
-- Reproducible build (buildah?)
+- Load media info from other sources -> URL problem
+- frontend for history: simple 'static' html/css/ts site that reads data from given json
+    bootstrap alternatives?
+- alternative deployment to heroku
+- have a look at ipfs

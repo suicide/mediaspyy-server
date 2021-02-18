@@ -15,7 +15,7 @@ object AppConfig {
       db: DbConfig,
       users: Map[String, String] = Map("test" -> "test"),
       bot: BotConfig,
-      ftp: FtpConfig
+      ftp: Map[String, FtpConfig] = Map("test" -> FtpConfig())
   )
 
   case class ServerConfig(port: Int = 8080)
@@ -25,6 +25,7 @@ object AppConfig {
       dbName: String = "mediaspyy"
   )
   case class BotConfig(
+    // TODO implement switch
       enabled: Boolean = false,
       addMediaUri: String = "http://localhost:48080/command",
       user: String = "test",
@@ -32,7 +33,6 @@ object AppConfig {
       keyword: String = "song"
   )
   case class FtpConfig(
-    // TODO implement switch
       enabled: Boolean = false,
       server: String = "localhost",
       port: Int = 21,
@@ -50,7 +50,7 @@ object AppConfig {
         "db.dbName" -> "mediaspyy",
         "users.test" -> "test",
         "users.foo" -> "bar",
-        "bot.enabled" -> "true"
+        "bot.enabled" -> "true",
       ),
       automaticConfig,
       keyDelimiter = Some('.')

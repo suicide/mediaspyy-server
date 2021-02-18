@@ -15,11 +15,6 @@ object FtpUploadMediaService {
 
   import DataJson._
 
-  // handle concurrent upload requests
-  // upload latest create media
-  // TODO upload latest history
-  // handle multiple users
-
   val service: URLayer[AppConfig with Logging with MediaService, MediaService] =
     ZLayer.fromServicesM[
       AppConfig.Config,
@@ -30,15 +25,48 @@ object FtpUploadMediaService {
       MediaService.Service
     ]((config, logger, mediaService) =>
       for {
-        sem <- Semaphore.make(1)
+        ftpConf <- ZIO.foreach(config.ftp.filter(t => t._2.enabled))((k, v) =>
+          Semaphore.make(1).map(s => (k, (v, s)))
+        )
       } yield new Service {
 
         override def createMedia(
             user: User,
             media: MediaData
         ): IO[ProcessingError, MediaData] = {
-          def upload[A](content: A, path: String)(implicit je: JsonEncoder[A]) = sem.withPermit {
-            ftpClient
+          val opC = ftpConf.get(user.name)
+
+          for {
+            res <- mediaService.createMedia(user, media)
+            _ <- opC match {
+              case None =>
+                logger.debug(
+                  s"No enabled FTP config found for user ${user.name}"
+                )
+              case Some((c, sem)) =>
+                for {
+                  history <- list(user, 100)
+                  _ <- handleUpload(res, history, c, sem)
+                } yield ()
+            }
+          } yield res
+        }
+
+        override def list(
+            user: User,
+            resultSize: Int
+        ): IO[ProcessingError, List[MediaData]] =
+          mediaService.list(user, resultSize)
+
+        def handleUpload(
+            current: MediaData,
+            history: List[MediaData],
+            c: FtpConfig,
+            sem: Semaphore
+        ): IO[ProcessingError, MediaData] = {
+
+          def upload[A](content: A, path: String)(implicit je: JsonEncoder[A]) =
+            ftpClient(c)
               .use { client =>
                 for {
                   json <- Task(content.toJson)
@@ -57,25 +85,19 @@ object FtpUploadMediaService {
 
               }
               .mapError(ex => ProcessingError("Failed to upload to server", ex))
+
+          sem.withPermit {
+            // run uploads in a sequence that cannot be disrupted by concurrent
+            // requests
+            for {
+              _ <- upload(current, c.uploadPathCurrent)
+              _ <- upload(history, c.uploadPathHistory)
+            } yield current
           }
 
-          val c = config.ftp
-          for {
-            res <- mediaService.createMedia(user, media)
-            _ <- upload(res, c.uploadPathCurrent)
-            history <- list(user, 100)
-            _ <- upload(history, c.uploadPathHistory)
-          } yield res
         }
 
-        override def list(
-            user: User,
-            resultSize: Int
-        ): IO[ProcessingError, List[MediaData]] =
-          mediaService.list(user, resultSize)
-
-        val ftpClient: TaskManaged[FTPClient] = {
-          val c = config.ftp
+        def ftpClient(c: FtpConfig): TaskManaged[FTPClient] = {
           Managed
             .make(
               for {
