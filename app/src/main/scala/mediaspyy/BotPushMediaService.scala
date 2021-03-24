@@ -35,14 +35,23 @@ object BotPushMediaService {
                 user: User,
                 media: MediaData
             ): IO[ProcessingError, MediaData] = {
+
+              (for {
+                data <- mediaService.createMedia(user, media)
+                _ <- update(data)
+              } yield data)
+            }
+
+            def update(
+                media: MediaData
+            ): IO[ProcessingError, MediaData] = {
               val c = config.bot
 
               (for {
                 req <- createRequest(c, media)
-                data <- mediaService.createMedia(user, media)
                 res <- client.status(req)
                 if res == Status.Ok
-              } yield data)
+              } yield media)
                 .mapError(t =>
                   ProcessingError("Failed to send media info to bot", t)
                 )
@@ -74,6 +83,18 @@ object BotPushMediaService {
               )
 
             }
+
+            override def delete(user: User, id: String)
+                : IO[ProcessingError, Unit] = {
+                  for {
+                    delete <- mediaService.delete(user, id)
+                    media <- mediaService.list(user, 1)
+                    _ <- media match {
+                      case head :: next => update(head)
+                      case Nil => ZIO.unit
+                    }
+                  } yield delete
+                }
           }
         }
     )

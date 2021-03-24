@@ -61,6 +61,8 @@ trait ApiRoutes[R <: MediaService with AuthenticationService with Logging] {
   lazy val dsl: Http4sDsl[ApiTask] = Http4sDsl[ApiTask]
   import dsl._
 
+  object idParam extends QueryParamDecoderMatcher[String]("id")
+
   object resultSizeParam
       extends OptionalQueryParamDecoderMatcher[Int]("resultSize")
 
@@ -70,12 +72,20 @@ trait ApiRoutes[R <: MediaService with AuthenticationService with Logging] {
   def routes: HttpRoutes[ApiTask] = authedMiddleware(authedRoutes)
 
   def authedRoutes = AuthedRoutes.of[User, ApiTask] {
+    case DELETE -> Root / "media" :? idParam(id) as user =>
+      delete(user, id)
+        .foldM(
+          e =>
+            log.throwable(s"Failed to delete item $id", e) *>
+              InternalServerError(s"Unable to delete media with id $id"),
+          Ok(_)
+        )
     case GET -> Root / "media" :? resultSizeParam(size) as user =>
       list(user, size.getOrElse(10))
         .foldM(
           e =>
-            log.throwable("Request failed with error", e) *>
-              InternalServerError("sorry"),
+            log.throwable(s"Failed to list items with size $size", e) *>
+            InternalServerError(s"Unable to list items with size $size"),
           Ok(_)
         )
     case req @ POST -> Root / "media" as user =>
@@ -83,8 +93,8 @@ trait ApiRoutes[R <: MediaService with AuthenticationService with Logging] {
         createMedia(user, m)
           .foldM(
             e =>
-              log.throwable("Request failed with error", e) *>
-                InternalServerError("sorry"),
+              log.throwable(s"Failed to create new media $m", e) *>
+                InternalServerError(s"Unable to create new media $m"),
             _ => Ok()
           )
       )

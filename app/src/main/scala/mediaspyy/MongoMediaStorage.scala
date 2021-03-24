@@ -82,7 +82,7 @@ object MongoMediaStorage {
         _ <- logger.debug(s"Reading media data for user $user from $c")
         chunk <- c
           .find(equal("username", user.name))
-          .sort(descending("createdAt"))
+          .sort(descending("media.createdAt"))
           .toStream()
           .take(resultSize)
           .run(Sink.collectAll)
@@ -92,6 +92,31 @@ object MongoMediaStorage {
       } yield res
 
       result
+    }
+
+    override def delete(user: User, id: String): IO[MediaStorage.DbError, Unit] = {
+
+      val result = for {
+        c <- collection.mapError(t => new DbError("", t))
+        _ <- logger.debug(s"Deleting media with id $id")
+        o <- c
+          .deleteOne(and(equal("username", user.name), equal("media.id", id)))
+          .toStream()
+          .run(Sink.head)
+          .mapError(t => DbError("Failed to handle mongodb request", t))
+        res <-
+          o match {
+            case None =>
+              ZIO.fail(DbError("Did not receive result from mongodb"))
+            case Some(r) =>
+              if (r.wasAcknowledged && r.getDeletedCount() == 1)
+                logger.debug(s"Successfully deleted item with id $id") *> ZIO.unit
+              else ZIO.fail(DbError("Delete was not acknowleged"))
+          }
+      } yield res
+
+      result
+
     }
 
   }

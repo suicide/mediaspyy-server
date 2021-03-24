@@ -10,12 +10,13 @@ import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTP
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+import zio.clock.Clock
 
 object FtpUploadMediaService {
 
   import DataJson._
 
-  val service: URLayer[AppConfig with Logging with MediaService, MediaService] =
+  val service: URLayer[AppConfig with Clock with Logging with MediaService, MediaService] =
     ZLayer.fromServicesM[
       AppConfig.Config,
       Logger[String],
@@ -34,10 +35,18 @@ object FtpUploadMediaService {
             user: User,
             media: MediaData
         ): IO[ProcessingError, MediaData] = {
+
+          updateMedia(user, mediaService.createMedia(user, media))
+        }
+
+        def updateMedia(
+            user: User,
+            update: IO[ProcessingError, MediaData]
+        ): IO[ProcessingError, MediaData] = {
           val opC = ftpConf.get(user.name)
 
           for {
-            res <- mediaService.createMedia(user, media)
+            res <- update
             _ <- opC match {
               case None =>
                 logger.debug(
@@ -76,7 +85,7 @@ object FtpUploadMediaService {
                       json.getBytes(StandardCharsets.UTF_8)
                     )
                   )
-                  _ <- Task { client.storeFile(path, data) }
+                  uploadResult <- Task { client.storeFile(path, data) }
                     .filterOrDieMessage(identity)(
                       s"Uploading content $content unsuccessful"
                     )
@@ -97,6 +106,19 @@ object FtpUploadMediaService {
 
         }
 
+
+    def delete(user: User, id: String): IO[ProcessingError, Unit] = {
+
+      for {
+        _ <- mediaService.delete(user, id)
+        list <- list(user, 1)
+        _ <- list match {
+          case head :: tail => updateMedia(user, IO.succeed(head))
+          case Nil => IO.unit
+        }
+      } yield (())
+    }
+
         def ftpClient(c: FtpConfig): TaskManaged[FTPClient] = {
           Managed
             .make(
@@ -105,9 +127,11 @@ object FtpUploadMediaService {
                 client <- Task {
                   val client = new FTPClient()
                   client.connect(c.server, c.port)
+                  client.enterLocalPassiveMode()
                   client.setFileType(FTP.BINARY_FILE_TYPE)
                   client
                 }
+                _ <- logger.debug(s"Connected to ${c.server}:${c.port}")
               } yield client
             )(client =>
               Task { client.disconnect() }.catchAllCause(ex =>

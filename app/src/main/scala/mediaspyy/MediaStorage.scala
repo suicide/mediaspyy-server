@@ -9,6 +9,7 @@ object MediaStorage {
   trait Service {
     def createMedia(user: User, media: MediaData): IO[DbError, Unit]
     def list(user: User, resultSize: Int): IO[DbError, List[MediaData]]
+    def delete(user: User, id: String): IO[DbError, Unit]
   }
 
   val inMemory: Layer[Nothing, MediaStorage] = ZLayer.fromEffect(
@@ -16,6 +17,12 @@ object MediaStorage {
       .make(Map[User, List[MediaData]]())
       .map(ref =>
         new Service {
+
+          override def delete(user: User, id: String): IO[DbError,Unit] = 
+            ref.update(m => m.updatedWith(user)(o => 
+                o.map(l => l.filterNot(media => media.id.contains(id)))
+                ))
+
           override def createMedia(user: User, media: MediaData)
               : IO[DbError, Unit] =
             ref.update(m =>
@@ -36,18 +43,6 @@ object MediaStorage {
         }
       )
   )
-
-  def createMedia(
-      user: User,
-      media: MediaData
-  ): ZIO[MediaStorage, DbError, Unit] =
-    ZIO.accessM(_.get.createMedia(user, media))
-
-  def list(
-      user: User,
-      resultSize: Int
-  ): ZIO[MediaStorage, DbError, List[MediaData]] =
-    ZIO.accessM(_.get.list(user, resultSize))
 
   case class DbError(msg: String, cause: Throwable = null)
       extends RuntimeException(msg, cause)

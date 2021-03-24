@@ -11,6 +11,9 @@ case class BasicMediaData(
   )
 
 case class MediaData(
+  // TODO might change this?
+  id: Option[String] = None,
+
   title: String,
   artist: String,
   album: Option[String],
